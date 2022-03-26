@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.projectToPersonMappingHandler = exports.findPerson = exports.findProject = void 0;
+exports.userToProjectMappingHandler = exports.findUser = exports.findProject = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const findProject = async (param) => {
@@ -29,38 +29,38 @@ const findProject = async (param) => {
     }
 };
 exports.findProject = findProject;
-const findPerson = async (param) => {
-    let person;
+const findUser = async (param) => {
+    let user;
     try {
         if (typeof param === 'string') {
-            person = await prisma.person.findUnique({
+            user = await prisma.user.findUnique({
                 where: {
                     email: param
                 }
             });
         }
         else {
-            person = await prisma.person.findUnique({
+            user = await prisma.user.findUnique({
                 where: {
                     id: param
                 }
             });
         }
-        if (person) {
-            return new Promise((resolve) => resolve(person));
+        if (user) {
+            return new Promise((resolve) => resolve(user));
         }
     }
     catch (err) {
         new Error('Something went wrong');
     }
 };
-exports.findPerson = findPerson;
-const projectToPersonMappingHandler = async (projectId, personId) => {
+exports.findUser = findUser;
+const userToProjectMappingHandler = async (projectId, personId) => {
     try {
-        await prisma.projecttopersonmaping.create({
+        await prisma.usertoprojectmapping.create({
             data: {
-                projectid: projectId,
-                personid: personId
+                project_id: projectId,
+                user_id: personId
             }
         });
     }
@@ -68,4 +68,4 @@ const projectToPersonMappingHandler = async (projectId, personId) => {
         new Error('Something went wrong');
     }
 };
-exports.projectToPersonMappingHandler = projectToPersonMappingHandler;
+exports.userToProjectMappingHandler = userToProjectMappingHandler;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.people = exports.signUp = void 0;
+exports.users = exports.signUp = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
@@ -13,21 +13,20 @@ const signUp = async (req, res, next) => {
     const role = req.body.role;
     const imgUrl = req.body.imgUrl;
     const password = req.body.password;
-    const children = req.body.children;
     try {
-        const hashPassword = await bcryptjs_1.default.hash(password, 12);
-        const newPerson = await prisma.person.create({
+        const hashedPassword = await bcryptjs_1.default.hash(password, 12);
+        const newPerson = await prisma.user.create({
             data: {
                 name: name,
                 email: email,
-                password: hashPassword,
+                password: hashedPassword,
                 role: role,
-                imgurl: imgUrl,
+                img_url: imgUrl,
             }
         });
         res.status(201).json({
             message: 'Your account was created!',
-            // person: newPerson
+            person: newPerson
         });
     }
     catch (err) {
@@ -37,11 +36,11 @@ const signUp = async (req, res, next) => {
     }
 };
 exports.signUp = signUp;
-const people = async (req, res, next) => {
+const users = async (req, res, next) => {
     try {
-        const peopleRecords = await prisma.person.findMany();
+        const users = await prisma.user.findMany();
         res.status(200).json({
-            people: peopleRecords
+            people: users
         });
     }
     catch (err) {
@@ -50,4 +49,4 @@ const people = async (req, res, next) => {
         });
     }
 };
-exports.people = people;
+exports.users = users;

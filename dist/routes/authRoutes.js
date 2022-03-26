@@ -30,13 +30,13 @@ const router = express_1.default.Router();
 const prisma = new client_1.PrismaClient();
 const emailValidator = (req) => {
     const email = req.body.email;
-    const personRecord = prisma.person.findUnique({
+    const userRecord = prisma.user.findUnique({
         where: {
             email: email
         }
     });
-    return personRecord.then(person => {
-        if (person) {
+    return userRecord.then(user => {
+        if (user) {
             return Promise.reject('Email is already in use!');
         }
     });
@@ -45,5 +45,5 @@ router.post('/sign-up', (0, express_validator_1.body)('email')
     .trim()
     .isEmail()
     .custom(emailValidator), authControllers.signUp);
-router.get('/people', authControllers.people);
+router.get('/users', authControllers.users);
 exports.default = router;

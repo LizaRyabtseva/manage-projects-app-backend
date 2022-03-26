@@ -1,6 +1,4 @@
-import {person, PrismaClient, project} from "@prisma/client";
-import {RequestHandler} from "express";
-import {rejects} from "assert";
+import {user, PrismaClient, project} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -28,40 +26,40 @@ export const findProject = async (param: number | string) => {
     }
 };
 
-export const findPerson = async (param: string | number) => {
-    let person: person | null;
+export const findUser = async (param: string | number) => {
+    let user: user | null;
 
     try {
         if (typeof param === 'string') {
-            person = await prisma.person.findUnique({
+            user = await prisma.user.findUnique({
                 where: {
                     email: param
                 }
             });
         } else {
-            person = await prisma.person.findUnique({
+            user = await prisma.user.findUnique({
                 where: {
                     id: param
                 }
             });
         }
-        if (person) {
-            return new Promise<person | null>((resolve) => resolve(person));
+        if (user) {
+            return new Promise<user | null>((resolve) => resolve(user));
         }
     } catch (err) {
         new Error('Something went wrong');
     }
 };
 
-export const projectToPersonMappingHandler = async (projectId: number, personId: number) => {
+export const userToProjectMappingHandler = async (projectId: number, personId: number) => {
     try {
-        await prisma.projecttopersonmaping.create({
+        await prisma.usertoprojectmapping.create({
             data: {
-                projectid: projectId,
-                personid: personId
+                project_id: projectId,
+                user_id: personId
             }
         });
     } catch (err) {
         new Error('Something went wrong');
     }
-}
+};

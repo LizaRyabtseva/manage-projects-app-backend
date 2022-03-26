@@ -1,6 +1,6 @@
 import {RequestHandler} from "express";
 import {PrismaClient, project} from "@prisma/client";
-import {findPerson, findProject, projectToPersonMappingHandler} from "../functions";
+import {findUser, findProject, userToProjectMappingHandler} from "../functions";
 
 const prisma = new PrismaClient();
 
@@ -31,49 +31,41 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
             message: err
         });
     }
-}
+};
 
 export const createProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
     const description = (req.body as {description: string}).description;
     const email = (req.body as {email: string}).email;
     //email надо получать из текущего пользователя
-    const people = (req.body as {people: string[]}).people;
+    // const people = (req.body as {people: string[]}).people;
     // массив строк с email'ми пользователей
 
     try {
-        const userRecord = await findPerson(email);
+        const userRecord = await findUser(email);
         const projectRecord = await findProject(title);
-        let newProject: project;
         if (!projectRecord && userRecord) {
             try {
-                newProject = await prisma.project.create({
+                await prisma.project.create({
                     data: {
                         title: title,
                         description: description,
-                        ownerid: userRecord.id
+                        owner_id: userRecord.id
                     }
                 });
             } catch (err) {
                 res.status(500).json({
-                    message: err
+                    message: err,
                 });
             }
             const newProjectRecord = await findProject(title);
             if (newProjectRecord) {
-                const newProjectToPersonMapping = await projectToPersonMappingHandler(newProjectRecord.id, newProjectRecord.ownerid);
-
-                people.map(async (email: string) => {
-                    const personRecord = await findPerson(email);
-                    if (personRecord) {
-                        const map = await projectToPersonMappingHandler(newProjectRecord.id, personRecord.id);
-                    }
-                });
+                const newUserToProjectMapping = await userToProjectMappingHandler(newProjectRecord.id, newProjectRecord.owner_id);
 
                 res.status(201).json({
                     message: 'Project was created!',
                     project: newProjectRecord,
-                    map: newProjectToPersonMapping
+                    userToProject: newUserToProjectMapping
                 });
             }
         } else {
@@ -86,7 +78,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
             err
         });
     }
-}
+};
 
 export const updateProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;

@@ -40,40 +40,33 @@ const createProject = async (req, res, next) => {
     const description = req.body.description;
     const email = req.body.email;
     //email надо получать из текущего пользователя
-    const people = req.body.people;
+    // const people = (req.body as {people: string[]}).people;
     // массив строк с email'ми пользователей
     try {
-        const userRecord = await (0, functions_1.findPerson)(email);
+        const userRecord = await (0, functions_1.findUser)(email);
         const projectRecord = await (0, functions_1.findProject)(title);
-        let newProject;
         if (!projectRecord && userRecord) {
             try {
-                newProject = await prisma.project.create({
+                await prisma.project.create({
                     data: {
                         title: title,
                         description: description,
-                        ownerid: userRecord.id
+                        owner_id: userRecord.id
                     }
                 });
             }
             catch (err) {
                 res.status(500).json({
-                    message: err
+                    message: err,
                 });
             }
             const newProjectRecord = await (0, functions_1.findProject)(title);
             if (newProjectRecord) {
-                const newProjectToPersonMapping = await (0, functions_1.projectToPersonMappingHandler)(newProjectRecord.id, newProjectRecord.ownerid);
-                people.map(async (email) => {
-                    const personRecord = await (0, functions_1.findPerson)(email);
-                    if (personRecord) {
-                        const map = await (0, functions_1.projectToPersonMappingHandler)(newProjectRecord.id, personRecord.id);
-                    }
-                });
+                const newUserToProjectMapping = await (0, functions_1.userToProjectMappingHandler)(newProjectRecord.id, newProjectRecord.owner_id);
                 res.status(201).json({
                     message: 'Project was created!',
                     project: newProjectRecord,
-                    map: newProjectToPersonMapping
+                    userToProject: newUserToProjectMapping
                 });
             }
         }
