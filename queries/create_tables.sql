@@ -25,15 +25,15 @@ create table "user"
 
 create table UserToProjectMapping(
     id serial primary key,
-    project_id integer,
+    project_id integer not null,
     foreign key (project_id) references Project (id),
-    person_id integer,
-    foreign key (person_id) references "user" (id)
+    user_id integer not null,
+    foreign key (user_id) references "user" (id)
 );
 
 create table Sprint(
     id serial primary key,
-    project_id integer,
+    project_id integer not null,
     foreign key (project_id) references Project (id),
     title text not null,
     description text,
@@ -60,11 +60,11 @@ create table Task(
 
 create table Comment(
     id serial primary key,
-    "date" timestamp,
-    "text" text,
-    user_id integer,
+    "date" timestamp not null,
+    "text" text not null,
+    user_id integer not null,
     foreign key (user_id) references "user" (id),
-    task_id integer,
+    task_id integer not null,
     foreign key (task_id) references Task (id)
 );
 
