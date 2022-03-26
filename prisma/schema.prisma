@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model project {
+  id                   Int                    @id @default(autoincrement())
+  title                String                 @unique
+  description          String
+  owner_id             Int
+  user                 user                   @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sprint               sprint[]
+  usertoprojectmapping usertoprojectmapping[]
+}
+
+model sprint {
+  id                           Int       @id @default(autoincrement())
+  project_id                   Int
+  title                        String
+  description                  String?
+  date_start                   DateTime? @db.Timestamp(6)
+  date_end                     DateTime? @db.Timestamp(6)
+  project                      project   @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  task_sprintTotask_backlog_id task[]    @relation("sprintTotask_backlog_id")
+  task_sprintTotask_sprint_id  task[]    @relation("sprintTotask_sprint_id")
+}
+
+model comment {
+  id      Int      @id @default(autoincrement())
+  date    DateTime @db.Timestamp(6)
+  text    String
+  user_id Int
+  task_id Int
+  task    task     @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model task {
+  id                             Int       @id @default(autoincrement())
+  sprint_id                      Int?
+  backlog_id                     Int?
+  creator_id                     Int
+  assigner_id                    Int?
+  title                          String
+  description                    String
+  status                         String?   @default("To do")
+  estimation                     Int?
+  priority                       String?   @default("Medium")
+  user_task_assigner_idTouser    user?     @relation("task_assigner_idTouser", fields: [assigner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sprint_sprintTotask_backlog_id sprint?   @relation("sprintTotask_backlog_id", fields: [backlog_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_task_creator_idTouser     user      @relation("task_creator_idTouser", fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sprint_sprintTotask_sprint_id  sprint?   @relation("sprintTotask_sprint_id", fields: [sprint_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comment                        comment[]
+}
+
+model user {
+  id                          Int                    @id @default(autoincrement())
+  name                        String
+  email                       String                 @unique
+  password                    String
+  role                        String?
+  img_url                     String?
+  comment                     comment[]
+  project                     project[]
+  task_task_assigner_idTouser task[]                 @relation("task_assigner_idTouser")
+  task_task_creator_idTouser  task[]                 @relation("task_creator_idTouser")
+  usertoprojectmapping        usertoprojectmapping[]
+}
+
+model usertoprojectmapping {
+  id         Int     @id @default(autoincrement())
+  project_id Int
+  user_id    Int
+  project    project @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user       user    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
