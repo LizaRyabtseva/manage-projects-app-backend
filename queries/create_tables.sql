@@ -1,6 +1,6 @@
 drop table UserToProjectMapping;
-drop table Task;
 drop table Comment;
+drop table Task;
 drop table Sprint;
 drop table Project;
 drop table "User";
@@ -37,20 +37,9 @@ create table Sprint(
     foreign key (project_id) references Project (id),
     title text not null,
     description text,
-    date_start date,
-    date_end date
+    date_start timestamp,
+    date_end timestamp
 );
-
-create table Comment(
-    id serial primary key,
-    "date" timestamp,
-    "text" text,
-    user_id integer,
-    foreign key (user_id) references "User" (id),
-    task_id integer,
-    foreign key (task_id) references Task (id)
-);
-
 
 create table Task(
     id serial primary key,
@@ -69,5 +58,14 @@ create table Task(
     priority text default 'Medium'
 );
 
+create table Comment(
+    id serial primary key,
+    "date" timestamp,
+    "text" text,
+    user_id integer,
+    foreign key (user_id) references "User" (id),
+    task_id integer,
+    foreign key (task_id) references Task (id)
+);
 
 alter table Project add foreign key (owner_id) references "User" (id);
