@@ -1,62 +1,73 @@
-drop table Ticket;
-drop table Person;
+drop table UserToProjectMapping;
+drop table Task;
+drop table Comment;
 drop table Sprint;
 drop table Project;
-drop table Projecttopersonmaping;
+drop table "User";
 
 
 create table Project(
     id serial primary key,
     title text unique not null,
     description text not null,
-    ownerId integer not null
+    owner_id integer not null
 );
 
-create table Person(
+create table "User"
+(
     id serial primary key,
     name text not null,
     email text unique not null,
     password text not null,
     role text,
-    imgUrl text
+    img_url text
 );
 
-create table ProjectToPersonMaping(
+create table UserToProjectMapping(
     id serial primary key,
-    projectId integer,
-    foreign key (projectId) references Project (id),
-    personId integer,
-    foreign key (personId) references Person (id)
+    project_id integer,
+    foreign key (project_id) references Project (id),
+    person_id integer,
+    foreign key (person_id) references "User" (id)
 );
 
 create table Sprint(
     id serial primary key,
-    projectId integer,
-    foreign key (projectId) references Project (id),
+    project_id integer,
+    foreign key (project_id) references Project (id),
     title text not null,
     description text,
-    dateStart date,
-    dateEnd date
+    date_start date,
+    date_end date
+);
+
+create table Comment(
+    id serial primary key,
+    "date" timestamp,
+    "text" text,
+    user_id integer,
+    foreign key (user_id) references "User" (id),
+    task_id integer,
+    foreign key (task_id) references Task (id)
 );
 
 
-create table Ticket(
+create table Task(
     id serial primary key,
-    sprintId integer,
-    foreign key (sprintId) references Sprint (id),
-    backlogId integer,
-    foreign key (backlogId) references Sprint (id),
-    creatorId integer not null,
-    foreign key (creatorId) references Person (id),
-    assignerId integer,
-    foreign key (assignerId) references Person (id),
-    updatedId integer,
-    foreign key (updatedId) references Person (id),
+    sprint_id integer,
+    foreign key (sprint_id) references Sprint (id),
+    backlog_id integer,
+    foreign key (backlog_id) references Sprint (id),
+    creator_id integer not null,
+    foreign key (creator_id) references "User" (id),
+    assigner_id integer,
+    foreign key (assigner_id) references "User" (id),
     title text not null,
     description text not null,
-    status text default 'todo',
-    storyPoints integer,
-    priority text default 'normal'
+    status text default 'To do',
+    estimation integer,
+    priority text default 'Medium'
 );
 
-alter table Project add foreign key (ownerId) references Person (id);
+
+alter table Project add foreign key (owner_id) references "User" (id);
