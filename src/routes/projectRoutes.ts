@@ -8,10 +8,10 @@ router.get('/', controllers.projects);
 
 router.get('/project/:id', controllers.findOneProject);
 
-router.post('/create-project', controllers.createProject);
+router.post('/create', controllers.createProject);
 
-router.patch('/update-project/:id', controllers.updateProject);
+router.patch('/update/:id', controllers.updateProject);
 
-router.delete('/delete-project/:id', controllers.deleteProject);
+router.delete('/delete/:id', controllers.deleteProject);
 
 export default router;
