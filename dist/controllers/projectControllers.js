@@ -63,10 +63,18 @@ const createProject = async (req, res, next) => {
             const newProjectRecord = await (0, functions_1.findProject)(title);
             if (newProjectRecord) {
                 const newUserToProjectMapping = await (0, functions_1.userToProjectMappingHandler)(newProjectRecord.id, newProjectRecord.owner_id);
+                const backlog = await prisma.sprint.create({
+                    data: {
+                        title: `Backlog of ${newProjectRecord.title} project.`,
+                        description: `Here you can store all tasks for next sprint.`,
+                        project_id: newProjectRecord.id
+                    }
+                });
                 res.status(201).json({
                     message: 'Project was created!',
                     project: newProjectRecord,
-                    userToProject: newUserToProjectMapping
+                    userToProject: newUserToProjectMapping,
+                    backlog: backlog
                 });
             }
         }
