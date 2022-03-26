@@ -3,7 +3,7 @@ drop table Comment;
 drop table Task;
 drop table Sprint;
 drop table Project;
-drop table "User";
+drop table "user";
 
 
 create table Project(
@@ -13,7 +13,7 @@ create table Project(
     owner_id integer not null
 );
 
-create table "User"
+create table "user"
 (
     id serial primary key,
     name text not null,
@@ -28,7 +28,7 @@ create table UserToProjectMapping(
     project_id integer,
     foreign key (project_id) references Project (id),
     person_id integer,
-    foreign key (person_id) references "User" (id)
+    foreign key (person_id) references "user" (id)
 );
 
 create table Sprint(
@@ -48,9 +48,9 @@ create table Task(
     backlog_id integer,
     foreign key (backlog_id) references Sprint (id),
     creator_id integer not null,
-    foreign key (creator_id) references "User" (id),
+    foreign key (creator_id) references "user" (id),
     assigner_id integer,
-    foreign key (assigner_id) references "User" (id),
+    foreign key (assigner_id) references "user" (id),
     title text not null,
     description text not null,
     status text default 'To do',
@@ -63,9 +63,9 @@ create table Comment(
     "date" timestamp,
     "text" text,
     user_id integer,
-    foreign key (user_id) references "User" (id),
+    foreign key (user_id) references "user" (id),
     task_id integer,
     foreign key (task_id) references Task (id)
 );
 
-alter table Project add foreign key (owner_id) references "User" (id);
+alter table Project add foreign key (owner_id) references "user" (id);
