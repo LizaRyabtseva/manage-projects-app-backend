@@ -1,23 +1,21 @@
 import express from "express";
 import * as authControllers from '../controllers/authControllers';
-import {PrismaClient} from "@prisma/client";
+import {PrismaClient} from '@prisma/client';
 import {body, CustomValidator} from 'express-validator';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const emailValidator: CustomValidator = (req: express.Request) => {
-    const email = (req.body as {email: string}).email;
-    const userRecord = prisma.user.findUnique({
+const emailValidator: CustomValidator = async value => {
+    const userRecord = await prisma.user.findUnique({
         where: {
-            email: email
+            email: value
         }
     });
-    return userRecord.then(user => {
-        if (user) {
-            return Promise.reject('Email is already in use!')
-        }
-    });
+    if (userRecord) {
+        return Promise.reject('E-mail already in use!');
+    }
+    return true;
 }
 
 router.post('/sign-up',

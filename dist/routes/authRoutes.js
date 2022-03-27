@@ -28,18 +28,16 @@ const client_1 = require("@prisma/client");
 const express_validator_1 = require("express-validator");
 const router = express_1.default.Router();
 const prisma = new client_1.PrismaClient();
-const emailValidator = (req) => {
-    const email = req.body.email;
-    const userRecord = prisma.user.findUnique({
+const emailValidator = async (value) => {
+    const userRecord = await prisma.user.findUnique({
         where: {
-            email: email
+            email: value
         }
     });
-    return userRecord.then(user => {
-        if (user) {
-            return Promise.reject('Email is already in use!');
-        }
-    });
+    if (userRecord) {
+        return Promise.reject('E-mail already in use!');
+    }
+    return true;
 };
 router.post('/sign-up', (0, express_validator_1.body)('email')
     .trim()
