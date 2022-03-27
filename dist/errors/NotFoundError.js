@@ -7,7 +7,7 @@ const HttpError_1 = __importDefault(require("./HttpError"));
 class NotFoundError extends HttpError_1.default {
     constructor(id) {
         if (id) {
-            super(`Record with ${id} not found!`, 404);
+            super(`Record with id = ${id} not found!`, 404);
         }
         else {
             super(`Records was not found!`, 404);
