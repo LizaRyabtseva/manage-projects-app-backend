@@ -59,7 +59,7 @@ const users = async (req, res, next) => {
     }
     catch (err) {
         console.error(err);
-        next(new HttpError_1.default());
+        next(new HttpError_1.default('Could get users!'));
     }
 };
 exports.users = users;

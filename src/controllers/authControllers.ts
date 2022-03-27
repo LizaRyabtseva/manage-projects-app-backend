@@ -56,7 +56,7 @@ export const users: RequestHandler = async (req, res, next) => {
         }
     } catch (err) {
         console.error(err);
-       next(new HttpError());
+       next(new HttpError('Could get users!'));
     }
 };
 
