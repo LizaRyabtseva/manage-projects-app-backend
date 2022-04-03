@@ -20,7 +20,9 @@ create table "user"(
     email text unique not null,
     password text not null,
     role text,
-    img_url text
+    img_url text,
+    current_project_id integer,
+    foreign key (current_project_id) references Project (id)
 );
 
 create table UserToProjectMapping(

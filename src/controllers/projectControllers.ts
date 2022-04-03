@@ -61,6 +61,15 @@ export const createProject: RequestHandler = async (req, res, next) => {
             });
     
             if (newProjectRecord) {
+                await prisma.user.update({
+                    where: {
+                        id: userRecord.id
+                    },
+                    data: {
+                        current_project_id: newProjectRecord.id
+                    }
+                });
+                
                 const backlog = await prisma.sprint.create({
                     data: {
                         title: `Backlog of ${newProjectRecord.title} project.`,
