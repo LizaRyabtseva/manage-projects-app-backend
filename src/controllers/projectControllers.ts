@@ -41,6 +41,7 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
 
 export const createProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
+    const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
     const email = (req.body as {email: string}).email;
     //email надо получать из текущего пользователя
@@ -53,6 +54,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
             const newProjectRecord = await prisma.project.create({
                 data: {
                     title: title,
+                    code: code,
                     description: description,
                     owner_id: userRecord.id
                 }
@@ -87,6 +89,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
 export const updateProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
     const title = (req.body as {title: string}).title;
+    const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
     // проверять пользователя
     // т.е. является ли он владельцем проекта
@@ -100,6 +103,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
                 },
                 data: {
                     title: title,
+                    code: code,
                     description: description
                 }
             });

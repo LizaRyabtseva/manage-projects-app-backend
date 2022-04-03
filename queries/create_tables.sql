@@ -9,12 +9,12 @@ drop table "user";
 create table Project(
     id serial primary key,
     title text unique not null,
+    code text not null,
     description text not null,
     owner_id integer not null
 );
 
-create table "user"
-(
+create table "user"(
     id serial primary key,
     name text not null,
     email text unique not null,
@@ -52,6 +52,7 @@ create table Task(
     assigner_id integer,
     foreign key (assigner_id) references "user" (id),
     title text not null,
+    code text not null,
     description text not null,
     status text default 'To do',
     estimation integer,
