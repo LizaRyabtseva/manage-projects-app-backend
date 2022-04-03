@@ -10,6 +10,7 @@ datasource db {
 model project {
   id                   Int                    @id @default(autoincrement())
   title                String                 @unique
+  code                 String
   description          String
   owner_id             Int
   user                 user                   @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -46,6 +47,7 @@ model task {
   creator_id                     Int
   assigner_id                    Int?
   title                          String
+  code                           String
   description                    String
   status                         String?   @default("To do")
   estimation                     Int?
