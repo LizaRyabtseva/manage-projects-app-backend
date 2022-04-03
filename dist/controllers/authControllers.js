@@ -41,7 +41,7 @@ const signUp = async (req, res, next) => {
         });
     }
     else {
-        errors.array().map(e => next(new HttpError_1.default(e.msg, 422)));
+        errors.array().map(e => next(new HttpError_1.default(e.msg, 400)));
     }
 };
 exports.signUp = signUp;
@@ -54,7 +54,7 @@ const users = async (req, res, next) => {
             });
         }
         else {
-            next(new NotFoundError_1.default('Users not found!'));
+            next(new NotFoundError_1.default('Users were not found!'));
         }
     }
     catch (err) {

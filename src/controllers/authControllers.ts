@@ -40,7 +40,7 @@ export const signUp: RequestHandler = async (req, res, next) => {
             user: newUser
         });
     } else {
-        errors.array().map(e => next(new HttpError(e.msg, 422)));
+        errors.array().map(e => next(new HttpError(e.msg, 400)));
     }
 };
 
@@ -52,7 +52,7 @@ export const users: RequestHandler = async (req, res, next) => {
                 users: users
             });
         } else {
-            next(new NotFoundError('Users not found!'));
+            next(new NotFoundError('Users were not found!'));
         }
     } catch (err) {
         console.error(err);
