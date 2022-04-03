@@ -1,6 +1,8 @@
-import {RequestHandler} from "express";
-import {PrismaClient, project} from "@prisma/client";
-import {findUser, findProject, userToProjectMappingHandler} from "../functions";
+import {RequestHandler} from 'express';
+import {PrismaClient} from '@prisma/client';
+import {findUser, findProject, userToProjectMappingHandler} from '../functions';
+import HttpError from '../errors/HttpError';
+import NotFoundError from '../errors/NotFoundError';
 
 const prisma = new PrismaClient();
 
@@ -8,9 +10,14 @@ const prisma = new PrismaClient();
 export const projects: RequestHandler = async (req, res, next) => {
     try {
         const projectRecords = await prisma.project.findMany();
-        res.status(200).json({projects: projectRecords});
+        if (projectRecords.length > 0) {
+            res.status(200).json({projects: projectRecords});
+        } else {
+            next(new NotFoundError('Projects were not found!'));
+        }
     } catch (err) {
-        res.status(500).json({message: err});
+        console.error(err);
+        next(new HttpError('Could not find projects!'));
     }
 }
 
@@ -20,16 +27,15 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
         const projectRecord = await findProject(projectId);
         if (projectRecord) {
             res.status(200).json({
-                message: 'Project wad found',
+                message: 'Project was found!',
                 project: projectRecord
             });
         } else {
-            res.status(404).json({message: 'Can not found the project!'});
+            next(new NotFoundError(projectId));
         }
     } catch (err) {
-        res.status(500).json({
-            message: err
-        });
+        console.error(err);
+        next(new HttpError(`Could not find project with id = ${projectId}!`));
     }
 };
 
@@ -38,30 +44,21 @@ export const createProject: RequestHandler = async (req, res, next) => {
     const description = (req.body as {description: string}).description;
     const email = (req.body as {email: string}).email;
     //email надо получать из текущего пользователя
-    // const people = (req.body as {people: string[]}).people;
-    // массив строк с email'ми пользователей
 
     try {
         const userRecord = await findUser(email);
         const projectRecord = await findProject(title);
+        
         if (!projectRecord && userRecord) {
-            try {
-                await prisma.project.create({
-                    data: {
-                        title: title,
-                        description: description,
-                        owner_id: userRecord.id
-                    }
-                });
-            } catch (err) {
-                res.status(500).json({
-                    message: err,
-                });
-            }
-            const newProjectRecord = await findProject(title);
+            const newProjectRecord = await prisma.project.create({
+                data: {
+                    title: title,
+                    description: description,
+                    owner_id: userRecord.id
+                }
+            });
+    
             if (newProjectRecord) {
-                const newUserToProjectMapping = await userToProjectMappingHandler(newProjectRecord.id, newProjectRecord.owner_id);
-                
                 const backlog = await prisma.sprint.create({
                     data: {
                         title: `Backlog of ${newProjectRecord.title} project.`,
@@ -69,6 +66,8 @@ export const createProject: RequestHandler = async (req, res, next) => {
                         project_id: newProjectRecord.id
                     }
                 });
+                
+                const newUserToProjectMapping = await userToProjectMappingHandler(newProjectRecord.id, newProjectRecord.owner_id);
 
                 res.status(201).json({
                     message: 'Project was created!',
@@ -78,14 +77,10 @@ export const createProject: RequestHandler = async (req, res, next) => {
                 });
             }
         } else {
-            res.status(200).json({
-                message: 'This project already exists!'
-            });
+            next(new HttpError('Project with this title already exists!', 422));
         }
     } catch (err) {
-        res.status(500).json({
-            err
-        });
+        next(new HttpError('Could not create project!'))
     }
 };
 
@@ -93,62 +88,61 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
     const title = (req.body as {title: string}).title;
     const description = (req.body as {description: string}).description;
-
+    // проверять пользователя
+    // т.е. является ли он владельцем проекта
+    // если нет, то кидаем ошибку
     try {
-        if (projectId) {
-            const projectRecord = await findProject(projectId);
-            if (projectRecord) {
-                const updatedProject = await prisma.project.update({
-                    where: {
-                        id: projectId
-                    },
-                    data: {
-                        title: title,
-                        description: description
-                    }
-                });
-                res.status(200).json({
-                    message: 'Project was updated!',
-                    project: updatedProject
-                });
-            } else {
-                res.status(404).json({message: 'Can not found the project!'});
-            }
+        const projectRecord = await findProject(projectId);
+        if (projectRecord) {
+            const updatedProject = await prisma.project.update({
+                where: {
+                    id: projectId
+                },
+                data: {
+                    title: title,
+                    description: description
+                }
+            });
+            res.status(201).json({
+                message: 'Project was updated!',
+                project: updatedProject
+            });
         } else {
-            res.status(404).json({message: 'Can not found the project!'});
+            next(new NotFoundError(projectId));
         }
     } catch (err) {
-        res.status(500).json({
-            message: err
-        });
+        next(new HttpError(`Could not update project with id = ${projectId}!`));
     }
 }
 
 export const deleteProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
-    let projects: project[];
-
+    // если удаляем проект, то надо удалить все спринты, беклог, userToProject, все таски и комментарии
     try {
         const projectRecord = await findProject(projectId);
 
         if (projectRecord) {
+            await prisma.usertoprojectmapping.deleteMany({
+                where: {
+                    project_id: projectId
+                }
+            });
+            
             await prisma.project.delete({
                 where: {
                     id: projectId
                 }
             });
-            projects = await prisma.project.findMany();
+            const projects = await prisma.project.findMany();
 
             res.status(200).json({
                 message: 'Project was deleted!',
                 projects: projects
             });
         } else {
-            res.status(404).json({message: 'Can not found the project!'});
+            next(new NotFoundError(projectId));
         }
     } catch (err) {
-        res.status(500).json({
-            message: err
-        });
+        next(new HttpError(`Could not delete project with id = ${projectId}!`))
     }
-}
+};
