@@ -8,14 +8,15 @@ datasource db {
 }
 
 model project {
-  id                   Int                    @id @default(autoincrement())
-  title                String                 @unique
-  code                 String
-  description          String
-  owner_id             Int
-  user                 user                   @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sprint               sprint[]
-  usertoprojectmapping usertoprojectmapping[]
+  id                                    Int                    @id @default(autoincrement())
+  title                                 String                 @unique
+  code                                  String
+  description                           String
+  owner_id                              Int
+  user                                  user                   @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sprint                                sprint[]
+  user_projectTouser_current_project_id user[]                 @relation("projectTouser_current_project_id")
+  usertoprojectmapping                  usertoprojectmapping[]
 }
 
 model sprint {
@@ -60,17 +61,20 @@ model task {
 }
 
 model user {
-  id                          Int                    @id @default(autoincrement())
-  name                        String
-  email                       String                 @unique
-  password                    String
-  role                        String?
-  img_url                     String?
-  comment                     comment[]
-  project                     project[]
-  task_task_assigner_idTouser task[]                 @relation("task_assigner_idTouser")
-  task_task_creator_idTouser  task[]                 @relation("task_creator_idTouser")
-  usertoprojectmapping        usertoprojectmapping[]
+  id                                       Int                    @id @default(autoincrement())
+  name                                     String
+  login                                    String
+  email                                    String                 @unique
+  password                                 String
+  role                                     String?
+  img_url                                  String?
+  current_project_id                       Int?
+  project_projectTouser_current_project_id project?               @relation("projectTouser_current_project_id", fields: [current_project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comment                                  comment[]
+  project                                  project[]
+  task_task_assigner_idTouser              task[]                 @relation("task_assigner_idTouser")
+  task_task_creator_idTouser               task[]                 @relation("task_creator_idTouser")
+  usertoprojectmapping                     usertoprojectmapping[]
 }
 
 model usertoprojectmapping {

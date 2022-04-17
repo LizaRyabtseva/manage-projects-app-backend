@@ -9,7 +9,10 @@ const prisma = new PrismaClient();
 
 export const projects: RequestHandler = async (req, res, next) => {
     try {
-        const projectRecords = await prisma.project.findMany();
+        const projectRecords = await prisma.project.findMany({include: {
+                user: true
+            }
+        });
         if (projectRecords.length > 0) {
             res.status(200).json({projects: projectRecords});
         } else {
@@ -61,6 +64,15 @@ export const createProject: RequestHandler = async (req, res, next) => {
             });
     
             if (newProjectRecord) {
+                await prisma.user.update({
+                    where: {
+                        id: userRecord.id
+                    },
+                    data: {
+                        current_project_id: newProjectRecord.id
+                    }
+                });
+                
                 const backlog = await prisma.sprint.create({
                     data: {
                         title: `Backlog of ${newProjectRecord.title} project.`,
@@ -79,7 +91,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
                 });
             }
         } else {
-            next(new HttpError('Project with this title already exists!', 422));
+            next(new HttpError('You pass wrong data!', 400));
         }
     } catch (err) {
         next(new HttpError('Could not create project!'))

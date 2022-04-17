@@ -25,6 +25,8 @@ router.post('/sign-up',
         .custom(emailValidator),
     authControllers.signUp);
 
+router.post('/login', authControllers.login);
+
 router.get('/users', authControllers.users);
 
 export default router;
