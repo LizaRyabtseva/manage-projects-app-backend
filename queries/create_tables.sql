@@ -2,6 +2,7 @@ drop table UserToProjectMapping;
 drop table Comment;
 drop table Task;
 drop table Sprint;
+alter table "user" drop constraint user_current_project_id_fkey;
 drop table Project;
 drop table "user";
 
@@ -17,6 +18,7 @@ create table Project(
 create table "user"(
     id serial primary key,
     name text not null,
+    login text not null,
     email text unique not null,
     password text not null,
     role text,
