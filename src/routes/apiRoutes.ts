@@ -5,6 +5,7 @@ import {PrismaClient} from '@prisma/client';
 
 const router = express.Router();
 
-router.get('/users/find', apiControllers.findUser);
+router.get('/users/find', apiControllers.findByQuery);
+router.get('/projects/find', apiControllers.findByQuery);
 
 export default router;
