@@ -1,6 +1,6 @@
 import {RequestHandler} from 'express';
-import {PrismaClient} from '@prisma/client';
-import {findUser, findProject, userToProjectMappingHandler} from '../functions';
+import {PrismaClient, user} from '@prisma/client';
+import {findUser, findProject, userToProjectMapping} from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
 
@@ -46,11 +46,16 @@ export const createProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
     const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
-    const email = (req.body as {email: string}).email;
+    const userId = (req.body as {id: string}).id;
+    const team = (req.body as {team: number[]}).team;
+
     //email надо получать из текущего пользователя
 
     try {
-        const userRecord = await findUser(email);
+        const userRecord = await findUser(userId);
+        if (userRecord && !team.includes(userRecord.id)) {
+            team.push(userRecord.id);
+        }
         const projectRecord = await findProject(title);
         
         if (!projectRecord && userRecord) {
@@ -81,17 +86,16 @@ export const createProject: RequestHandler = async (req, res, next) => {
                     }
                 });
                 
-                const newUserToProjectMapping = await userToProjectMappingHandler(newProjectRecord.id, newProjectRecord.owner_id);
+                team.map(async user => await userToProjectMapping(newProjectRecord.id, user));
 
                 res.status(201).json({
                     message: 'Project was created!',
                     project: newProjectRecord,
-                    userToProject: newUserToProjectMapping,
                     backlog: backlog
                 });
             }
         } else {
-            next(new HttpError('You pass wrong data!', 400));
+            next(new HttpError('You passed wrong data!', 400));
         }
     } catch (err) {
         next(new HttpError('Could not create project!'))

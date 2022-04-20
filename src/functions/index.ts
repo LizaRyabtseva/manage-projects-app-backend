@@ -51,7 +51,7 @@ export const findUser = async (param: string | number) => {
     }
 };
 
-export const userToProjectMappingHandler = async (projectId: number, personId: number) => {
+export const userToProjectMapping = async (projectId: number, personId: number) => {
     try {
         await prisma.usertoprojectmapping.create({
             data: {
