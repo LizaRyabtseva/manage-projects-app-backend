@@ -26,16 +26,18 @@ export const findProject = async (param: number | string) => {
     }
 };
 
-export const findTeam = async (param: number) => {
-    let team: usertoprojectmapping[] | null;
+export const findUserToProjectMapping = async (param: number) => {
+    let team: Array<usertoprojectmapping & {user: user}> | null;
     try {
         team = await prisma.usertoprojectmapping.findMany({
             where: {
                 project_id: param
+            }, include: {
+                user: true
             }
         });
         if (team) {
-            return new Promise<usertoprojectmapping[] | null>((resolve) => resolve(team));
+            return new Promise<Array<usertoprojectmapping & {user: user}> | null>((resolve) => resolve(team));
         }
     } catch (err) {
     
