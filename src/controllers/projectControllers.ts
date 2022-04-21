@@ -1,6 +1,6 @@
 import {RequestHandler} from 'express';
 import {PrismaClient, user} from '@prisma/client';
-import {findUser, findProject, userToProjectMapping} from '../functions';
+import {findUser, findProject, userToProjectMapping, findTeam} from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
 
@@ -28,10 +28,14 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
     try {
         const projectRecord = await findProject(projectId);
+        const team = await findTeam(projectId);
+        const teamIds = team?.filter(member => member.user_id !== projectRecord?.owner_id)
+            .map(member => member.user_id);
+        const project = {...projectRecord, team: teamIds};
         if (projectRecord) {
             res.status(200).json({
                 message: 'Project was found!',
-                project: projectRecord
+                project
             });
         } else {
             next(new NotFoundError(projectId));

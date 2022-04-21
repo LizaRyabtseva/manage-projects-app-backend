@@ -1,4 +1,4 @@
-import {user, PrismaClient, project} from "@prisma/client";
+import {user, PrismaClient, project, usertoprojectmapping} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +25,22 @@ export const findProject = async (param: number | string) => {
         new Error('Something went wrong');
     }
 };
+
+export const findTeam = async (param: number) => {
+    let team: usertoprojectmapping[] | null;
+    try {
+        team = await prisma.usertoprojectmapping.findMany({
+            where: {
+                project_id: param
+            }
+        });
+        if (team) {
+            return new Promise<usertoprojectmapping[] | null>((resolve) => resolve(team));
+        }
+    } catch (err) {
+    
+    }
+}
 
 export const findUser = async (param: string | number) => {
     let user: user | null;
