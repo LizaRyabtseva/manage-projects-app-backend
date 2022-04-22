@@ -54,7 +54,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
     const description = (req.body as {description: string}).description;
     const userId = (req.body as {id: string}).id;
     const team = (req.body as {team: number[]}).team;
-    console.log('here');
+
     //email надо получать из текущего пользователя
 
     try {
@@ -113,6 +113,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
     const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
+    const team = (req.body as {team: number[]}).team;
+
     // проверять пользователя
     // т.е. является ли он владельцем проекта
     // если нет, то кидаем ошибку
@@ -129,6 +131,11 @@ export const updateProject: RequestHandler = async (req, res, next) => {
                     description: description
                 }
             });
+            const usersToProject = await findUserToProjectMapping(projectId);
+
+            const userIds = usersToProject?.map(member => member.user_id);
+            console.log(userIds);
+
             res.status(201).json({
                 message: 'Project was updated!',
                 project: updatedProject
