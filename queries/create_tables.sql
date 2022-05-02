@@ -37,16 +37,23 @@ create table UserToProjectMapping(
 
 create table Sprint(
     id serial primary key,
-    project_id integer not null,
-    foreign key (project_id) references Project (id),
     title text not null,
     description text,
     date_start timestamp,
-    date_end timestamp
+    date_end timestamp,
+    project_id integer not null,
+    foreign key (project_id) references Project (id)
 );
 
 create table Task(
     id serial primary key,
+    title text not null,
+    code text not null,
+    description text not null,
+    status text default 'To do',
+    "type" text default 'Task',
+    estimation integer,
+    priority text default 'Medium',
     sprint_id integer,
     foreign key (sprint_id) references Sprint (id),
     backlog_id integer,
@@ -54,13 +61,7 @@ create table Task(
     creator_id integer not null,
     foreign key (creator_id) references "user" (id),
     assigner_id integer,
-    foreign key (assigner_id) references "user" (id),
-    title text not null,
-    code text not null,
-    description text not null,
-    status text default 'To do',
-    estimation integer,
-    priority text default 'Medium'
+    foreign key (assigner_id) references "user" (id)
 );
 
 create table Comment(

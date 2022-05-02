@@ -21,11 +21,11 @@ model project {
 
 model sprint {
   id                           Int       @id @default(autoincrement())
-  project_id                   Int
   title                        String
   description                  String?
   date_start                   DateTime? @db.Timestamp(6)
   date_end                     DateTime? @db.Timestamp(6)
+  project_id                   Int
   project                      project   @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   task_sprintTotask_backlog_id task[]    @relation("sprintTotask_backlog_id")
   task_sprintTotask_sprint_id  task[]    @relation("sprintTotask_sprint_id")
@@ -43,16 +43,17 @@ model comment {
 
 model task {
   id                             Int       @id @default(autoincrement())
-  sprint_id                      Int?
-  backlog_id                     Int?
-  creator_id                     Int
-  assigner_id                    Int?
   title                          String
   code                           String
   description                    String
   status                         String?   @default("To do")
+  type                           String?   @default("Task")
   estimation                     Int?
   priority                       String?   @default("Medium")
+  sprint_id                      Int?
+  backlog_id                     Int?
+  creator_id                     Int
+  assigner_id                    Int?
   user_task_assigner_idTouser    user?     @relation("task_assigner_idTouser", fields: [assigner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sprint_sprintTotask_backlog_id sprint?   @relation("sprintTotask_backlog_id", fields: [backlog_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_task_creator_idTouser     user      @relation("task_creator_idTouser", fields: [creator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
