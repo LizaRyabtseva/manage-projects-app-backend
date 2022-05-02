@@ -1,5 +1,5 @@
 import {RequestHandler} from 'express';
-import {PrismaClient, user} from '@prisma/client';
+import {PrismaClient} from '@prisma/client';
 import {findUser, findProject, userToProjectMapping, findUserToProjectMapping} from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
@@ -52,7 +52,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
     const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
-    const userId = (req.body as {id: string}).id;
+    const userId = (req.body as {user: string}).user;
     const team = (req.body as {team: number[]}).team;
 
     //email надо получать из текущего пользователя
@@ -104,7 +104,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
             next(new HttpError('You passed wrong data!', 400));
         }
     } catch (err) {
-        next(new HttpError('Could not create project!'))
+        next(new HttpError('Could not create project!'));
     }
 };
 
@@ -120,7 +120,10 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     // если нет, то кидаем ошибку
     try {
         const projectRecord = await findProject(projectId);
+  
         if (projectRecord) {
+            team.push(projectRecord.owner_id);
+
             const updatedProject = await prisma.project.update({
                 where: {
                     id: projectId
@@ -131,11 +134,44 @@ export const updateProject: RequestHandler = async (req, res, next) => {
                     description: description
                 }
             });
+            
             const usersToProject = await findUserToProjectMapping(projectId);
-
             const userIds = usersToProject?.map(member => member.user_id);
-            console.log(userIds);
-
+            
+            if ( usersToProject && userIds) {
+                // new user
+                for (const member of team) {
+                    if (!userIds.includes(member)) {
+                        await userToProjectMapping(projectId, member);
+                        await prisma.user.update({
+                            where: {
+                                id: member
+                            }, data: {
+                                current_project_id: projectId
+                            }
+                        })
+                    }
+                }
+                
+                // delete user if he left the team
+                for (const member of usersToProject) {
+                    if (!team.includes(member.user_id)) {
+                        await prisma.usertoprojectmapping.delete({
+                            where: {
+                                id: member.id
+                            }
+                        });
+                        await prisma.user.update({
+                            where: {
+                                id: member.user_id
+                            }, data: {
+                                current_project_id: null
+                            }
+                        });
+                    }
+                }
+            }
+            
             res.status(201).json({
                 message: 'Project was updated!',
                 project: updatedProject

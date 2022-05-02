@@ -6,12 +6,12 @@ const router = express.Router();
 
 router.get('/', controllers.projects);
 
-router.get('/project/:id', controllers.findOneProject);
+router.post('/', controllers.createProject);
 
-router.post('/create', controllers.createProject);
+router.get('/:id', controllers.findOneProject);
 
 router.patch('/:id', controllers.updateProject);
 
-router.delete('/delete/:id', controllers.deleteProject);
+router.delete('/:id', controllers.deleteProject);
 
 export default router;
