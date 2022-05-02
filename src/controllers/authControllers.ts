@@ -93,7 +93,13 @@ export const login: RequestHandler = async (req, res, next) => {
                 expiresIn: '6h'
             });
             res.status(200).json({
-                user,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    login: user.login,
+                    email: user.email,
+                    currentProject: user.current_project_id
+                },
                 token,
                 expiration: 3600 * 1000 * 6
             });
