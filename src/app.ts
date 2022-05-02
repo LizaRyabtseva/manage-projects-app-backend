@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes';
 import projectRoutes from './routes/projectRoutes';
 import sprintRoutes from './routes/sprintRoutes';
 import apiRoutes from "./routes/apiRoutes";
+import taskRoutes from "./routes/taskRoutes";
 import errorMiddleware from './middleware/errorMiddleware';
 
 const app: Application = Express();
@@ -25,6 +26,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.use('/projects', projectRoutes);
 app.use('/projects/:projectId', sprintRoutes);
+app.use('/projects/:projectId/sprints', taskRoutes);
 app.use('/join', authRoutes);
 app.use('/api', apiRoutes);
 app.use(errorMiddleware);
