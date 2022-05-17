@@ -1,9 +1,10 @@
 import {RequestHandler} from 'express';
-import {PrismaClient} from '@prisma/client';
+import {PrismaClient, user} from '@prisma/client';
 import {
     findUser,
     findProject,
-    userToProjectMapping, updateProjectStatus
+    userToProjectMapping,
+    findUserToProjectMapping, updateProjectStatus
 } from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
