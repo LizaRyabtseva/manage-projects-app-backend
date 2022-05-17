@@ -3,23 +3,27 @@ import {user, task, sprint, PrismaClient, project, usertoprojectmapping} from "@
 const prisma = new PrismaClient();
 
 export const findProject = async (param: number | string) => {
-    let project: project | null;
+    let project: project & {user: user} | null;
     try {
         if (typeof param === 'number') {
             project = await prisma.project.findUnique({
                 where: {
                     id: param
+                }, include: {
+                    user: true
                 }
             });
         } else {
             project = await prisma.project.findUnique({
                 where: {
                     title: param
+                }, include: {
+                    user: true
                 }
             });
         }
         if (project) {
-            return new Promise<project | null>(((resolve) => resolve(project)));
+            return new Promise<project & {user: user} | null>(((resolve) => resolve(project)));
         }
     } catch (err) {
         new Error('Something went wrong');
