@@ -25,8 +25,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.use('/projects', projectRoutes);
-app.use('/projects/:projectId', sprintRoutes);
-app.use('/projects/:projectId/sprints', taskRoutes);
+app.use('/sprints', sprintRoutes);
+app.use('/tasks', taskRoutes);
 app.use('/join', authRoutes);
 app.use('/api', apiRoutes);
 app.use(errorMiddleware);

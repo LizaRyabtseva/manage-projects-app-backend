@@ -12,7 +12,6 @@ export const signUp: RequestHandler = async (req, res, next) => {
     const errors = validationResult(req);
    
     const name = (req.body as {name: string}).name;
-    const login = (req.body as {login: string}).login;
     const email = (req.body as {email: string}).email;
     const role = (req.body as {role: string}).role;
     const imgUrl = (req.body as {imgUrl: string}).imgUrl;
@@ -26,7 +25,6 @@ export const signUp: RequestHandler = async (req, res, next) => {
             newUser = await prisma.user.create({
                 data: {
                     name: name,
-                    login: login,
                     email: email,
                     password: hashedPassword,
                     role: role,
@@ -34,7 +32,6 @@ export const signUp: RequestHandler = async (req, res, next) => {
                 }
             });
         } catch (err) {
-            console.error(err);
             next(new HttpError('Could not create account!'));
         }
         
@@ -93,10 +90,10 @@ export const login: RequestHandler = async (req, res, next) => {
                 expiresIn: '6h'
             });
             res.status(200).json({
+                message: 'User was authenticated!',
                 user: {
                     id: user.id,
                     name: user.name,
-                    login: user.login,
                     email: user.email,
                     currentProject: user.current_project_id
                 },
@@ -104,10 +101,10 @@ export const login: RequestHandler = async (req, res, next) => {
                 expiration: 3600 * 1000 * 6
             });
         } else {
-            next(new HttpError('You put wrong data!', 401));
+            next(new HttpError('You entered wrong e-mail or password!', 401));
         }
     } else {
-        next(new NotFoundError('User was not found!'));
+        next(new HttpError('You entered wrong e-mail or password!', 401));
     }
 }
 
@@ -122,7 +119,6 @@ export const users: RequestHandler = async (req, res, next) => {
             next(new NotFoundError('Users were not found!'));
         }
     } catch (err) {
-        console.error(err);
         next(new HttpError('Could not find users!'));
     }
 };

@@ -1,6 +1,8 @@
 import {RequestHandler} from "express";
 import {PrismaClient} from '@prisma/client';
-import {findProject} from "../functions";
+import {findProject, findTasksBySprintId} from "../functions";
+import NotFoundError from "../errors/NotFoundError";
+import HttpError from "../errors/HttpError";
 
 const prisma = new PrismaClient();
 
@@ -36,5 +38,20 @@ export const createSprint: RequestHandler = async (req, res, next) => {
         res.status(500).json({
             err
         });
+    }
+};
+
+export const getTasksBySprintId: RequestHandler = async (req, res, next) => {
+    const sprintId = +req.params.sprintId;
+    try {
+        const tasks = await findTasksBySprintId(sprintId);
+        if (tasks) {
+            console.log(tasks);
+            res.status(200).json({message: 'Tasks was found!', tasks});
+        } else {
+            next(new NotFoundError(sprintId));
+        }
+    } catch (err) {
+        next(new HttpError(`Could not find sprint with id=${sprintId}`));
     }
 };

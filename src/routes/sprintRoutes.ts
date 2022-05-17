@@ -3,6 +3,8 @@ import * as sprintControllers from '../controllers/sprintControllers';
 
 const router = express.Router();
 
-router.post('/sprints/create', sprintControllers.createSprint);
+router.post('/', sprintControllers.createSprint);
+
+router.get('/:sprintId/tasks', sprintControllers.getTasksBySprintId);
 
 export default router;

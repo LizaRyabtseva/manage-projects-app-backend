@@ -12,6 +12,7 @@ model project {
   title                                 String                 @unique
   code                                  String
   description                           String
+  status                                String?                @default("Active")
   owner_id                              Int
   user                                  user                   @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sprint                                sprint[]
@@ -64,7 +65,6 @@ model task {
 model user {
   id                                       Int                    @id @default(autoincrement())
   name                                     String
-  login                                    String
   email                                    String                 @unique
   password                                 String
   role                                     String?

@@ -12,13 +12,13 @@ create table Project(
     title text unique not null,
     code text not null,
     description text not null,
+    status text default 'Active',
     owner_id integer not null
 );
 
 create table "user"(
     id serial primary key,
     name text not null,
-    login text not null,
     email text unique not null,
     password text not null,
     role text,
