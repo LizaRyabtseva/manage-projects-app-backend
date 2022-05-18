@@ -32,7 +32,7 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
     try {
         const projectRecord = await findProject(projectId);
         let pr = JSON.parse(JSON.stringify(projectRecord));
-        delete pr.user.password;
+        delete pr.owner.password;
 
         const usersToProject = await findUserToProjectMapping(projectId);
 
@@ -54,7 +54,7 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
         });
 
         const project = {...pr, team, allTeam};
-        if (projectRecord) {
+        if (project) {
             res.status(200).json({
                 message: 'Project was found!',
                 project
