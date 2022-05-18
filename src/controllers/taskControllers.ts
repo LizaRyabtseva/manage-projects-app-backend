@@ -49,20 +49,33 @@ export const createTask: RequestHandler = async (req, res, next) => {
 };
 
 export const getTask: RequestHandler = async (req, res, next) => {
-    console.log('task');
-    
     const taskId = +req.params.taskId;
-
+    let task;
     try {
-        const task = await findTaskById(taskId);
-        const fetchedTask = JSON.parse(JSON.stringify(task));
-        fetchedTask.assigner = [{
-            id: fetchedTask.user_task_assigner_idTouser.id,
-            email: fetchedTask.user_task_assigner_idTouser.email
-        }];
-        delete fetchedTask.user_task_assigner_idTouser;
-
+        task = await findTaskById(taskId);
+    } catch (err) {
+        next(new HttpError(`Could not find task with id=${taskId}`));
+    }
+    let fetchedTask;
+    try {
         if (task) {
+            fetchedTask = JSON.parse(JSON.stringify(task));
+            fetchedTask = {
+                ...fetchedTask, assigner: [{
+                    id: fetchedTask.user_task_assigner_idTouser.id,
+                    email: fetchedTask.user_task_assigner_idTouser.email,
+                    name: fetchedTask.user_task_assigner_idTouser.name
+                }], creator: [{
+                    id: fetchedTask.user_task_creator_idTouser.id,
+                    email: fetchedTask.user_task_creator_idTouser.email,
+                    name: fetchedTask.user_task_creator_idTouser.name
+                }]
+            };
+        }
+
+        if (fetchedTask) {
+            delete fetchedTask.user_task_assigner_idTouser;
+            delete fetchedTask.user_task_creator_idTouser;
             res.status(200).json({
                 message: 'Task was found',
                 task: fetchedTask
@@ -71,7 +84,7 @@ export const getTask: RequestHandler = async (req, res, next) => {
             next(new NotFoundError(taskId))
         }
     } catch (err) {
-        next(new HttpError(`Could not find task with id=${taskId}`));
+        next(new HttpError(`Could not assign creator and assigner for task with id=${taskId}`));
     }
 };
 

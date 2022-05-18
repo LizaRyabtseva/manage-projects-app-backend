@@ -4,7 +4,7 @@ import {
     findUser,
     findProject,
     userToProjectMapping,
-    findUserToProjectMapping, updateProjectStatus
+    findUserToProjectMapping, updateProjectStatus, findProjects
 } from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
@@ -14,11 +14,10 @@ const prisma = new PrismaClient();
 
 export const projects: RequestHandler = async (req, res, next) => {
     try {
-        const projectRecords = await prisma.project.findMany({include: {
-                user: true
-            }
-        });
-        if (projectRecords.length > 0) {
+        const projectRecords = await findProjects();
+        console.log(projectRecords);
+
+        if (projectRecords && projectRecords.length > 0) {
             res.status(200).json({projects: projectRecords});
         } else {
             next(new NotFoundError('Projects were not found!'));

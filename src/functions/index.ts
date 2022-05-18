@@ -2,6 +2,29 @@ import {user, task, sprint, PrismaClient, project, usertoprojectmapping} from "@
 
 const prisma = new PrismaClient();
 
+export const findProjects = async () => {
+    let projects:  Array<project> | null;
+    try {
+        projects = await prisma.project.findMany({
+            include: {
+                user: true
+            }
+        });
+        if (projects) {
+            let fetchedProjects = JSON.parse(JSON.stringify(projects)).map((project: any) => {
+                project.owner = project.user;
+                delete project.user;
+                delete project.owner.password;
+                return project;
+            });
+
+            return new Promise<Array<project & {owner: user}> | null>(((resolve) => resolve(fetchedProjects)));
+        }
+    } catch (err) {
+        new Error('Something went wrong');
+    }
+}
+
 export const findProject = async (param: number | string) => {
     let project: project & {user: user} | null;
     try {
@@ -23,7 +46,12 @@ export const findProject = async (param: number | string) => {
             });
         }
         if (project) {
-            return new Promise<project & {user: user} | null>(((resolve) => resolve(project)));
+            const fetchedProject = JSON.parse(JSON.stringify(project));
+            fetchedProject.owner = {...fetchedProject.user};
+            delete fetchedProject.user;
+            delete fetchedProject.owner.password;
+
+            return new Promise<project & {owner: user} | null>(((resolve) => resolve(fetchedProject)));
         }
     } catch (err) {
         new Error('Something went wrong');
@@ -76,19 +104,55 @@ export const findUser = async (param: string | number, type: string) => {
     }
 };
 
+export const findSprintById = async (sprintId: number) => {
+    let sprint: sprint | null;
+
+    try {
+        sprint = await prisma.sprint.findUnique({
+            where: {
+                id: sprintId
+            }
+        });
+
+        if (sprint) {
+            return new Promise<sprint | null>((resolve) => resolve(sprint));
+        }
+    } catch (err) {
+        new Error('Something went wrong');
+    }
+};
+
 export const findTaskById = async (taskId: number) => {
     let task: task | null;
+    let sprint, project;
+
     try {
-        const task = await prisma.task.findUnique({
+        task = await prisma.task.findUnique({
             where: {
                 id: taskId
             },
             include: {
-                user_task_assigner_idTouser: true
+                user_task_assigner_idTouser: true,
+                user_task_creator_idTouser: true
             }
         });
         if (task) {
-            return new Promise<task | null>((resolve) => resolve(task));
+            if (task.sprint_id) {
+                sprint = await findSprintById(task.sprint_id);
+            } else if (task.backlog_id) {
+                sprint = await findSprintById(task.backlog_id);
+            }
+            if (sprint) {
+                project = await findProject(sprint.project_id);
+                if (project) {
+                    const taskWithProjectData = JSON.parse(JSON.stringify(task));
+                    taskWithProjectData.project = {
+                        id: project.id,
+                        title: project.title
+                    };
+                    return new Promise<task & {user: user} & {project: {id: number, title: string}} | null>((resolve) => resolve(taskWithProjectData));
+                }
+            }
         }
     } catch (err) {
         new Error('Something went wrong');
