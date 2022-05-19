@@ -50,7 +50,19 @@ export const findProject = async (param: number | string) => {
             fetchedProject.owner = {...fetchedProject.user};
             delete fetchedProject.user;
             delete fetchedProject.owner.password;
-
+            
+            let sprints = await findSprintByProjectId(fetchedProject.id);
+            
+            if (sprints && sprints.length > 0) {
+                for (const sprint of sprints) {
+                    if (sprint && sprint.date_start && sprint.date_end) {
+                        fetchedProject.sprintId = sprint.id;
+                    } else if (sprint) {
+                        fetchedProject.backlogId = sprint.id;
+                    }
+                }
+            }
+    
             return new Promise<project & {owner: user} | null>(((resolve) => resolve(fetchedProject)));
         }
     } catch (err) {
