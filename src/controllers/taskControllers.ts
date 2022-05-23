@@ -2,7 +2,7 @@ import {RequestHandler} from "express";
 import {PrismaClient} from '@prisma/client';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
-import {findTaskById} from "../functions";
+import {findSprintById, findTaskById, findTasksBySprintId} from "../functions";
 
 const prisma = new PrismaClient();
 
@@ -122,7 +122,33 @@ export const updateTask: RequestHandler = async (req, res, next) => {
                 assigner_id: assignerId
             }
         });
+        res.status(200).json({message: 'Task was updated', task: taskRecord});
     } else {
         next(new NotFoundError(taskId))
+    }
+};
+
+export const getTasksBySprintId: RequestHandler = async (req, res, next) => {
+    const sprintId = +req.params.sprintId;
+    const type = req.url.split('/')[1];
+    console.log(type);
+    try {
+        const sprint = await findSprintById(sprintId);
+        if (!sprint) {
+            next(new NotFoundError(sprintId));
+        }
+    } catch (err) {
+        next(new HttpError(`Could not find ${type} with id=${sprintId}`))
+    }
+    
+    try {
+        const tasks = await findTasksBySprintId(sprintId, type);
+        if (tasks) {
+            res.status(200).json({message: 'Tasks was found', tasks});
+        } else {
+            res.status(200).json({message: 'Tasks was not find', tasks: []});
+        }
+    } catch (err) {
+        next(new HttpError(`Could not find tasks with ${type}Id=${sprintId}`));
     }
 };

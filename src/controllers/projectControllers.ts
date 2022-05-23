@@ -71,7 +71,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
     const title = (req.body as {title: string}).title;
     const code = (req.body as {code: string}).code;
     const description = (req.body as {description: string}).description;
-    const userId = (req.body as {user: string}).user;
+    const userId = (req.body as {owner: string}).owner;
     const team = (req.body as {team: number[]}).team;
     
     //email надо получать из текущего пользователя
@@ -82,6 +82,9 @@ export const createProject: RequestHandler = async (req, res, next) => {
             team.push(userRecord.id);
         }
         const projectRecord = await findProject(title);
+        
+        console.log('userR', userRecord);
+        console.log('projectR', projectRecord);
         
         if (!projectRecord && userRecord) {
             const newProjectRecord = await prisma.project.create({

@@ -93,7 +93,7 @@ export const findUserToProjectMapping = async (param: number) => {
 
 export const findUser = async (param: string | number, type: string) => {
     let user: user | null = null;
-
+    console.log(param);
     try {
         if (typeof param === 'string' && type === 'email') {
             user = await prisma.user.findUnique({
@@ -109,6 +109,8 @@ export const findUser = async (param: string | number, type: string) => {
             });
         }
         if (user) {
+            console.log('in find user');
+            console.log(user);
             return new Promise<user | null>((resolve) => resolve(user));
         }
     } catch (err) {
@@ -171,22 +173,38 @@ export const findTaskById = async (taskId: number) => {
     }
 };
 
-export const findTasksBySprintId = async (sprintId: number) => {
-    let tasks: Array<task & { user_task_assigner_idTouser?: user | null, assigner?: Partial<user> | null}> | null;
+export const findTasksBySprintId = async (sprintId: number, type: string) => {
+    let tasks: Array<Partial<task> & {
+        user_task_assigner_idTouser?: user | null,
+        assigner?: Partial<user> | null,
+        user_task_creator_idTouser?: user | null,
+        creator?: Partial<user> | null,
+        backlogId?: number,
+        sprintId?: number
+    }> | null = null;
     try {
-        tasks = await prisma.task.findMany({
-            where: {
-                OR: [{
+        if (type === 'sprint') {
+            tasks = await prisma.task.findMany({
+                where: {
                     sprint_id: sprintId
-                }, {
+                },
+                include: {
+                    user_task_assigner_idTouser: true,
+                    user_task_creator_idTouser: true
+                }
+            });
+        } else if (type === 'backlog') {
+            tasks = await prisma.task.findMany({
+                where: {
                     backlog_id: sprintId
-                }]
-            },
-            include: {
-                user_task_assigner_idTouser: true
-            }
-        });
-        // console.log(tasks);
+                },
+                include: {
+                    user_task_assigner_idTouser: true,
+                    user_task_creator_idTouser: true
+                }
+            });
+        }
+        
         if (tasks) {
             tasks = tasks.map(task => {
                 if (task.user_task_assigner_idTouser) {
@@ -197,9 +215,34 @@ export const findTasksBySprintId = async (sprintId: number) => {
                     };
                     delete task.user_task_assigner_idTouser;
                 }
+                
+                if (task.user_task_creator_idTouser) {
+                    task.creator = {
+                        id: task.user_task_creator_idTouser.id,
+                        name: task.user_task_creator_idTouser.name,
+                        email: task.user_task_creator_idTouser.email
+                    }
+                };
+                delete task.user_task_creator_idTouser;
+                
+                if (task.backlog_id || task.backlog_id === null) {
+                    task.backlogId = task.backlog_id!;
+                }
+                
+                if (task.sprint_id || task.sprint_id === null) {
+                    task.sprintId = task.sprint_id!;
+                }
+                delete task.backlog_id;
+                delete task.sprint_id;
+                
                 return task;
             });
-            return new Promise<Array<task & { assigner?: Partial<user> | null}> | null>((resolve) => resolve(tasks));
+            return new Promise<Array<Partial<task> &
+                { assigner?: Partial<user> | null,
+                    creator?: Partial<user> | null,
+                    backlogId?: number,
+                    sprintId?: number,
+                }> | null>((resolve) => resolve(tasks));
         }
     } catch (err) {
         new Error('Something went wrong');
@@ -229,7 +272,7 @@ export const findTasksByProjectId = async (projectId: number) => {
             let tasks: any = [];
             for (const sprint of sprints) {
                 if (sprint) {
-                    const t = await findTasksBySprintId(sprint.id);
+                    const t = await findTasksBySprintId(sprint.id, 'sprint');
                     tasks = tasks.concat(t)
                 }
             }

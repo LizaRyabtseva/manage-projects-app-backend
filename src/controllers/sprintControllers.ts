@@ -44,9 +44,9 @@ export const createSprint: RequestHandler = async (req, res, next) => {
 export const getTasksBySprintId: RequestHandler = async (req, res, next) => {
     const sprintId = +req.params.sprintId;
     try {
-        const tasks = await findTasksBySprintId(sprintId);
+        const tasks = await findTasksBySprintId(sprintId, 'sprint');
         if (tasks) {
-            console.log(tasks);
+            
             res.status(200).json({message: 'Tasks was found!', tasks});
         } else {
             next(new NotFoundError(sprintId));
