@@ -25,8 +25,6 @@ export const searchHandler: RequestHandler = async (req, res, next) => {
             const users = usersToProject?.filter(member => member.project_id === projectId)
                 .filter(member => member.user.email.startsWith(query));
     
-            console.log(usersToProject);
-    
             res.status(200).json({users: users?.map(member => member.user)});
         } catch (err) {
             next(new HttpError(`Can not find records for ${category}!`));
