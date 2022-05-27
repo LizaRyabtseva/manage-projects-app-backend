@@ -16,12 +16,12 @@ export const createTask: RequestHandler = async (req, res, next) => {
     const assignerId = (req.body as {assignerId: number}).assignerId;
     const creatorId = (req.body as {userId: number}).userId;
     const token = (req.body as {token: string}).token;
-    const backlogId = (req.body as {backlogId: number}).backlogId;
+    const sprintId = (req.body as {sprintId: number}).sprintId;
     
     try {
         const backlog = await prisma.sprint.findUnique({
             where: {
-                id: backlogId
+                id: sprintId
             }
         });
         
@@ -34,8 +34,8 @@ export const createTask: RequestHandler = async (req, res, next) => {
                     estimation: estimation,
                     priority: priority,
                     type: type,
+                    sprint_id: sprintId,
                     // status: 'To do',
-                    backlog_id: backlogId,
                     creator_id: creatorId,
                     assigner_id: assignerId
                 }
@@ -99,7 +99,7 @@ export const updateTask: RequestHandler = async (req, res, next) => {
     const assignerId = (req.body as {assignerId: number}).assignerId;
     // const creatorId = (req.body as {userId: number}).userId;
     const token = (req.body as {token: string}).token;
-    // const backlogId = (req.body as {backlogId: number}).backlogId;
+    const sprintId = (req.body as {sprintId: number}).sprintId;
     
     let taskRecord;
     try {
@@ -119,7 +119,8 @@ export const updateTask: RequestHandler = async (req, res, next) => {
                 priority: priority,
                 type: type,
                 status: status,
-                assigner_id: assignerId
+                assigner_id: assignerId,
+                sprint_id: sprintId
             }
         });
         res.status(200).json({message: 'Task was updated', task: taskRecord});
@@ -130,25 +131,24 @@ export const updateTask: RequestHandler = async (req, res, next) => {
 
 export const getTasksBySprintId: RequestHandler = async (req, res, next) => {
     const sprintId = +req.params.sprintId;
-    const type = req.url.split('/')[1];
-    console.log(type);
+
     try {
         const sprint = await findSprintById(sprintId);
         if (!sprint) {
             next(new NotFoundError(sprintId));
         }
     } catch (err) {
-        next(new HttpError(`Could not find ${type} with id=${sprintId}`))
+        next(new HttpError(`Could not find sprint with id=${sprintId}`))
     }
     
     try {
-        const tasks = await findTasksBySprintId(sprintId, type);
+        const tasks = await findTasksBySprintId(sprintId);
         if (tasks) {
             res.status(200).json({message: 'Tasks was found', tasks});
         } else {
             res.status(200).json({message: 'Tasks was not find', tasks: []});
         }
     } catch (err) {
-        next(new HttpError(`Could not find tasks with ${type}Id=${sprintId}`));
+        next(new HttpError(`Could not find tasks with sprintId=${sprintId}`));
     }
 };

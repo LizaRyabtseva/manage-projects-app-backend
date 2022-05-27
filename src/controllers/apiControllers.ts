@@ -1,7 +1,14 @@
 import {RequestHandler} from "express";
 import {PrismaClient} from "@prisma/client";
 import HttpError from "../errors/HttpError";
-import {findProject, findTasksByProjectId, findUser, findUserToProjectMapping} from "../functions";
+import {
+    findCommentsByTaskId,
+    findProject,
+    findTaskById,
+    findTasksByProjectId,
+    findUser,
+    findUserToProjectMapping
+} from "../functions";
 import NotFoundError from "../errors/NotFoundError";
 
 const prisma = new PrismaClient();
@@ -112,4 +119,62 @@ export const isUniqueValue: RequestHandler = async (req, res, next) => {
     } catch (err) {
         next(new HttpError(`Could not find records with value = ${value}!`))
     }
-}
+};
+
+export const createComment: RequestHandler = async (req, res, next) => {
+    let date = (req.body as {date: string}).date;
+    const text = (req.body as {text: string}).text;
+    const taskId = +req.params.taskId;
+    const userId = (req.body as {userId: number}).userId;
+
+    let taskRecord, userRecord;
+    try {
+        taskRecord = await findTaskById(taskId);
+    } catch (err) {
+        next(new HttpError(`Could not find records with id = ${taskId}`))
+    }
+    
+    try {
+        userRecord = await findUser(userId, 'id');
+    } catch (err) {
+        next(new HttpError(`Could not find records with id = ${userId}`))
+    }
+    if (taskRecord && userRecord) {
+        try {
+            const newComment = await prisma.comment.create({
+                data: {
+                    text: text,
+                    date: date,
+                    user_id: userId,
+                    task_id: taskId
+                }
+            });
+            res.status(201).json({
+                message: 'New comment was created!',
+                comment: newComment
+            });
+        } catch (err) {
+            next(new HttpError(`Could not create new comment for task with id=${taskId}`));
+        }
+    }
+};
+
+export const getComments: RequestHandler = async (req, res, next) => {
+    const taskId = +req.params.taskId;
+    
+    let taskRecord;
+    try {
+        taskRecord = await findTaskById(taskId);
+    } catch (err) {
+        next(new HttpError(`Could not find records with id = ${taskId}`))
+    }
+    
+    if (taskRecord) {
+        const comments = await findCommentsByTaskId(taskId);
+        if (comments) {
+            res.status(200).json({message: 'Comments was found', comments});
+        }
+    } else {
+        next(new NotFoundError(taskId));
+    }
+};

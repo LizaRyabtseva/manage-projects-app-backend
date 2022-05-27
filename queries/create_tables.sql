@@ -56,8 +56,6 @@ create table Task(
     priority text default 'Medium',
     sprint_id integer,
     foreign key (sprint_id) references Sprint (id),
-    backlog_id integer,
-    foreign key (backlog_id) references Sprint (id),
     creator_id integer not null,
     foreign key (creator_id) references "user" (id),
     assigner_id integer,

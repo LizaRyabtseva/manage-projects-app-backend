@@ -1,4 +1,4 @@
-import {user, task, sprint, PrismaClient, project, usertoprojectmapping} from "@prisma/client";
+import {user, task, sprint, comment, PrismaClient, project, usertoprojectmapping} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -55,10 +55,12 @@ export const findProject = async (param: number | string) => {
             
             if (sprints && sprints.length > 0) {
                 for (const sprint of sprints) {
-                    if (sprint && sprint.date_start && sprint.date_end) {
+                    const now = new Date();
+                    if (sprint && sprint.date_start && sprint.date_end &&
+                        (now > sprint.date_start && now < sprint.date_end)) {
                         fetchedProject.sprintId = sprint.id;
-                    } else if (sprint) {
-                        fetchedProject.backlogId = sprint.id;
+                    } else if (sprint && !sprint.date_start && !sprint.date_end) {
+                        fetchedProject.backlogId = sprint.id
                     }
                 }
             }
@@ -72,7 +74,6 @@ export const findProject = async (param: number | string) => {
 
 export const findUserToProjectMapping = async (param: number) => {
     let team: Array<usertoprojectmapping & {user: user}> | null;
-    console.log(param);
     try {
         team = await prisma.usertoprojectmapping.findMany({
             where: {
@@ -81,8 +82,7 @@ export const findUserToProjectMapping = async (param: number) => {
                 user: true
             }
         });
-    
-        console.log(team);
+        
         if (team) {
             return new Promise<Array<usertoprojectmapping & {user: user}> | null>((resolve) => resolve(team));
         }
@@ -93,7 +93,6 @@ export const findUserToProjectMapping = async (param: number) => {
 
 export const findUser = async (param: string | number, type: string) => {
     let user: user | null = null;
-    console.log(param);
     try {
         if (typeof param === 'string' && type === 'email') {
             user = await prisma.user.findUnique({
@@ -109,8 +108,6 @@ export const findUser = async (param: string | number, type: string) => {
             });
         }
         if (user) {
-            console.log('in find user');
-            console.log(user);
             return new Promise<user | null>((resolve) => resolve(user));
         }
     } catch (err) {
@@ -153,8 +150,6 @@ export const findTaskById = async (taskId: number) => {
         if (task) {
             if (task.sprint_id) {
                 sprint = await findSprintById(task.sprint_id);
-            } else if (task.backlog_id) {
-                sprint = await findSprintById(task.backlog_id);
             }
             if (sprint) {
                 project = await findProject(sprint.project_id);
@@ -173,37 +168,24 @@ export const findTaskById = async (taskId: number) => {
     }
 };
 
-export const findTasksBySprintId = async (sprintId: number, type: string) => {
+export const findTasksBySprintId = async (sprintId: number) => {
     let tasks: Array<Partial<task> & {
         user_task_assigner_idTouser?: user | null,
         assigner?: Partial<user> | null,
         user_task_creator_idTouser?: user | null,
         creator?: Partial<user> | null,
-        backlogId?: number,
         sprintId?: number
     }> | null = null;
     try {
-        if (type === 'sprint') {
-            tasks = await prisma.task.findMany({
-                where: {
-                    sprint_id: sprintId
-                },
-                include: {
-                    user_task_assigner_idTouser: true,
-                    user_task_creator_idTouser: true
-                }
-            });
-        } else if (type === 'backlog') {
-            tasks = await prisma.task.findMany({
-                where: {
-                    backlog_id: sprintId
-                },
-                include: {
-                    user_task_assigner_idTouser: true,
-                    user_task_creator_idTouser: true
-                }
-            });
-        }
+        tasks = await prisma.task.findMany({
+            where: {
+                sprint_id: sprintId
+            },
+            include: {
+                user_task_assigner_idTouser: true,
+                user_task_creator_idTouser: true
+            }
+        });
         
         if (tasks) {
             tasks = tasks.map(task => {
@@ -225,14 +207,9 @@ export const findTasksBySprintId = async (sprintId: number, type: string) => {
                 };
                 delete task.user_task_creator_idTouser;
                 
-                if (task.backlog_id || task.backlog_id === null) {
-                    task.backlogId = task.backlog_id!;
-                }
-                
-                if (task.sprint_id || task.sprint_id === null) {
+                if (task.sprint_id) {
                     task.sprintId = task.sprint_id!;
                 }
-                delete task.backlog_id;
                 delete task.sprint_id;
                 
                 return task;
@@ -240,7 +217,6 @@ export const findTasksBySprintId = async (sprintId: number, type: string) => {
             return new Promise<Array<Partial<task> &
                 { assigner?: Partial<user> | null,
                     creator?: Partial<user> | null,
-                    backlogId?: number,
                     sprintId?: number,
                 }> | null>((resolve) => resolve(tasks));
         }
@@ -256,7 +232,7 @@ export const findSprintByProjectId = async (projectId: number) => {
                 project_id: projectId
             }
         });
-        // console.log(sprints);
+
         if (sprints) {
             return new Promise<Array<sprint | null>>((resolve) => resolve(sprints));
         }
@@ -272,8 +248,8 @@ export const findTasksByProjectId = async (projectId: number) => {
             let tasks: any = [];
             for (const sprint of sprints) {
                 if (sprint) {
-                    const t = await findTasksBySprintId(sprint.id, 'sprint');
-                    tasks = tasks.concat(t)
+                    const task = await findTasksBySprintId(sprint.id);
+                    tasks = tasks.concat(task)
                 }
             }
             if (tasks) {
@@ -310,4 +286,54 @@ export const updateProjectStatus = async (projectId: number, status: string) => 
     } catch (err) {
         new Error('Something went wrong');
     }
+};
+
+export const getMonth = (id: number) => {
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return month[id];
 }
+
+export const joinDate = (
+    day: string | number,
+    month: string | number,
+    year: string | number,
+    hours?: string | number,
+    minutes?: string | number) => {
+    return hours && minutes ? `${day}/${month}/${year} ${hours}:${minutes}` : `${day}/${month}/${year} `;
+}
+
+export const findCommentsByTaskId = async (taskId: number) => {
+    let comments: Array<comment & {user: user}> | null;
+    try {
+        comments = await prisma.comment.findMany({
+            where: {
+                task_id: taskId
+            }, include: {
+                user: true
+            }
+        });
+        // console.log(comments);
+        if (comments) {
+            let fetchedComments = JSON.parse(JSON.stringify(comments));
+            fetchedComments = fetchedComments.map((comment: any) => {
+                comment.user = {
+                    id: comment.user.id,
+                    name: comment.user.name,
+                    email: comment.user.email
+                };
+                const date = new Date(comment.date);
+                comment.date = joinDate(
+                    date.getDate(),
+                    getMonth(date.getMonth()),
+                    date.getFullYear(),
+                    date.getHours(),
+                    date.getMinutes()
+                );
+                return comment;
+            });
+            return new Promise<task & {user: user} | null>((resolve) => resolve(fetchedComments));
+        }
+    } catch (err) {
+        new Error('Something went wrong');
+    }
+};

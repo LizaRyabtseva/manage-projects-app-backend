@@ -19,6 +19,10 @@ router.get('/projects/find', apiControllers.searchHandler);
 
 router.get('/projects/:projectId/count-tasks', apiControllers.countTasks);
 
+router.post('/tasks/:taskId/comment', apiControllers.createComment);
+
+router.get('/tasks/:taskId/comments', apiControllers.getComments);
+
 
 
 export default router;

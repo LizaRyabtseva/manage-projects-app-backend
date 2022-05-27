@@ -5,6 +5,8 @@ const router = express.Router();
 
 router.post('/', sprintControllers.createSprint);
 
+router.get('/:sprintId', sprintControllers.getSprint);
+
 router.get('/:sprintId/tasks', sprintControllers.getTasksBySprintId);
 
 export default router;
