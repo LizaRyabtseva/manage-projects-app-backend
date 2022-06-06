@@ -335,7 +335,7 @@ export const joinDate = (
     year: string | number,
     hours?: string | number,
     minutes?: string | number) => {
-    return hours && minutes ? `${day}/${month}/${year} ${hours}:${minutes}` : `${day}/${month}/${year} `;
+    return hours && minutes ? minutes >= 10 ? `${day}/${month}/${year} ${hours}:${minutes}` :  `${day}/${month}/${year} ${hours}:0${minutes}`: `${day}/${month}/${year} `;
 }
 
 export const findCommentsByTaskId = async (taskId: number) => {
