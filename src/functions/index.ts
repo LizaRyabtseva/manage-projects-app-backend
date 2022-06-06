@@ -3,7 +3,7 @@ import {user, task, sprint, comment, PrismaClient, project, usertoprojectmapping
 const prisma = new PrismaClient();
 
 export const findProjects = async () => {
-    let projects:  Array<project> | null;
+    let projects: Array<project> | null;
     try {
         projects = await prisma.project.findMany({
             include: {
@@ -13,11 +13,13 @@ export const findProjects = async () => {
         if (projects) {
             let fetchedProjects = JSON.parse(JSON.stringify(projects)).map((project: any) => {
                 project.owner = project.user;
+                project.ownerId = project.owner_id;
                 delete project.user;
                 delete project.owner.password;
+                delete project.owner_id;
                 return project;
             });
-
+    
             return new Promise<Array<project & {owner: user}> | null>(((resolve) => resolve(fetchedProjects)));
         }
     } catch (err) {
@@ -48,6 +50,8 @@ export const findProject = async (param: number | string) => {
         if (project) {
             const fetchedProject = JSON.parse(JSON.stringify(project));
             fetchedProject.owner = {...fetchedProject.user};
+            fetchedProject.ownerId = fetchedProject.owner.id;
+            delete fetchedProject.owner_id;
             delete fetchedProject.user;
             delete fetchedProject.owner.password;
             
@@ -64,20 +68,52 @@ export const findProject = async (param: number | string) => {
                     }
                 }
             }
-    
-            return new Promise<project & {owner: user} | null>(((resolve) => resolve(fetchedProject)));
+            // console.log(fetchedProject);
+            return new Promise<Partial<project> & {owner: user} & {ownerId: number} | null>(((resolve) => resolve(fetchedProject)));
         }
     } catch (err) {
         new Error('Something went wrong');
     }
 };
 
-export const findUserToProjectMapping = async (param: number) => {
+export const findProjectsByUserId = async (userId: number) => {
+    let userToProjects: Array<usertoprojectmapping & {user: user, project: project}> | null;
+    
+    try {
+        userToProjects = await prisma.usertoprojectmapping.findMany({
+            where: {
+                user_id: userId
+            },
+            include: {
+                user: true,
+                project: true
+            }
+        });
+        
+        if (userToProjects) {
+            const projectIds = JSON.parse(JSON.stringify(userToProjects)).map((project: any) => project.project_id);
+            const projects: Array<Partial<project> & {owner: user}> = [];
+            for (const id of projectIds) {
+                const projectRecord = await findProject(id);
+                if (projectRecord) {
+                    const project = JSON.parse(JSON.stringify(projectRecord));
+                    project.ownerId = project.owner_id;
+                    projects.push(project);
+                }
+            }
+            return new Promise<Array<Partial<project> & {owner: user}> | null>(((resolve) => resolve(projects)));
+        }
+    } catch (err) {
+        new Error('Something went wrong');
+    }
+}
+
+export const findUserToProjectMapping = async (projectId: number) => {
     let team: Array<usertoprojectmapping & {user: user}> | null;
     try {
         team = await prisma.usertoprojectmapping.findMany({
             where: {
-                project_id: param
+                project_id: projectId
             }, include: {
                 user: true
             }
@@ -87,7 +123,7 @@ export const findUserToProjectMapping = async (param: number) => {
             return new Promise<Array<usertoprojectmapping & {user: user}> | null>((resolve) => resolve(team));
         }
     } catch (err) {
-    
+        new Error('Something went wrong');
     }
 }
 

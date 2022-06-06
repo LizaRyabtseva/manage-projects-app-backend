@@ -13,8 +13,6 @@ router.get('/usersInProject/find', apiControllers.searchHandler);
 
 router.get('/users/is-unique', apiControllers.isUniqueValue);
 
-router.get('/users/is-unique-name', apiControllers.isUniqueValue);
-
 router.get('/projects/find', apiControllers.searchHandler);
 
 router.get('/projects/:projectId/count-tasks', apiControllers.countTasks);

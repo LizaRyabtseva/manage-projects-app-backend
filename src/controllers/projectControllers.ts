@@ -4,7 +4,10 @@ import {
     findUser,
     findProject,
     userToProjectMapping,
-    findUserToProjectMapping, updateProjectStatus, findProjects
+    findUserToProjectMapping,
+    updateProjectStatus,
+    findProjects,
+    findProjectsByUserId
 } from '../functions';
 import HttpError from '../errors/HttpError';
 import NotFoundError from '../errors/NotFoundError';
@@ -15,7 +18,6 @@ const prisma = new PrismaClient();
 export const projects: RequestHandler = async (req, res, next) => {
     try {
         const projectRecords = await findProjects();
-        console.log(projectRecords);
 
         if (projectRecords && projectRecords.length > 0) {
             res.status(200).json({projects: projectRecords});
@@ -31,8 +33,8 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
     try {
         const projectRecord = await findProject(projectId);
-        let pr = JSON.parse(JSON.stringify(projectRecord));
-        delete pr.owner.password;
+        // let pr = JSON.parse(JSON.stringify(projectRecord));
+        // delete pr.owner.password;
 
         const usersToProject = await findUserToProjectMapping(projectId);
 
@@ -53,7 +55,7 @@ export const findOneProject: RequestHandler = async (req, res, next) => {
             }
         });
 
-        const project = {...pr, team, allTeam};
+        const project = {...projectRecord, team, allTeam};
         if (project) {
             res.status(200).json({
                 message: 'Project was found!',
@@ -82,9 +84,6 @@ export const createProject: RequestHandler = async (req, res, next) => {
             team.push(userRecord.id);
         }
         const projectRecord = await findProject(title);
-        
-        console.log('userR', userRecord);
-        console.log('projectR', projectRecord);
         
         if (!projectRecord && userRecord) {
             const newProjectRecord = await prisma.project.create({
@@ -150,7 +149,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     }
     
     if (projectRecord && team) {
-        team.push(projectRecord.owner_id);
+        team.push(projectRecord.ownerId);
         let updatedProject;
         try {
             updatedProject = await prisma.project.update({
@@ -211,7 +210,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
                             }
                         });
                     } catch (err) {
-                        next(new HttpError(`Could not update currentProject field in user with id = ${member}`));
+                        next(new HttpError(`Could not update currentProject field in user with id = ${member.id}`));
                     }
                 }
             }
@@ -229,6 +228,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 export const finishProject: RequestHandler = async (req, res, next) => {
     const projectId = +req.params.id;
     const status = (req.body as {status: string}).status;
+    console.log('here');
     try {
         const projectRecord = await findProject(projectId);
         
@@ -257,5 +257,65 @@ export const finishProject: RequestHandler = async (req, res, next) => {
         }
     } catch (err) {
         next(new HttpError(`Could not change status of project with id = ${projectId}!`))
+    }
+};
+
+export const getProjectsByUserId: RequestHandler = async (req, res, next) => {
+    const userId = +req.params.userId;
+    let userRecord;
+    try {
+        userRecord = await findUser(userId, 'id');
+    } catch (err) {
+        next(new HttpError(`Could not find user with id = ${userId}!`))
+    }
+    if (userRecord) {
+        try {
+            const projects = await findProjectsByUserId(userId)
+            if (projects) {
+                res.status(200).json({message: 'Projects was found', projects});
+            }
+        } catch (err) {
+            next(new HttpError(`Could not find projects for user with id = ${userId}!`))
+        }
+    } else {
+        next(new NotFoundError(userId));
+    }
+};
+
+export const makeCurrentProject: RequestHandler = async (req, res, next) => {
+    const projectId = (req.body as {projectId: number}).projectId;
+    const userId = (req.body as {userId: number}).userId;
+    
+    let userRecord, projectRecord;
+    try {
+        userRecord = await findUser(userId, 'id');
+    } catch (err) {
+        next(new HttpError(`Could not find user with id = ${userId}!`))
+    }
+    
+    try {
+        projectRecord = await findProject(projectId);
+    } catch (err) {
+        next(new HttpError(`Could not find project with id = ${projectId}!`))
+    }
+    
+    if (userRecord && projectRecord) {
+        try {
+            await prisma.user.update({
+                where: {
+                    id: userId
+                }, data: {
+                    current_project_id: projectId
+                }
+            });
+            
+            res.status(200).json({message: `Current project of user with id = ${userId} was updated`});
+        } catch (err) {
+            next(new HttpError(`Could not update user with id = ${userId}!`))
+        }
+    } else if (userRecord && !projectRecord) {
+        next(new NotFoundError(projectId));
+    } else if (!userRecord && projectRecord) {
+        next(new NotFoundError(userId));
     }
 };
